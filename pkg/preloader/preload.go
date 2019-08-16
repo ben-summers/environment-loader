@@ -25,7 +25,6 @@ func PreloadEnvironment() error {
 			} else {
 				scanner := bufio.NewScanner(file)
 				firstScan := true
-				keepScanning := false
 				var environmentPreloaderPrefix string
 
 			scanning:
@@ -44,20 +43,16 @@ func PreloadEnvironment() error {
 							}
 							if environmentPreloaderPrefix != "" {
 								log.Printf("Found environment preloader prefix: %s", environmentPreloaderPrefix)
-								keepScanning = true
 							}
 						}
 						firstScan = false
-						if keepScanning {
-							log.Printf("I will continue to load environment variables from this file.")
-						}
 					} else {
 						line := scanner.Text()
 						chunks := strings.SplitN(line, "=", 2)
 						if len(chunks) == 2 {
 							prefixedName := fmt.Sprintf("%s_%s", environmentPreloaderPrefix, chunks[0])
 
-							log.Printf("Setting %s ...", prefixedName)
+							log.Printf("Setting %s", prefixedName)
 
 							if setenvErr := os.Setenv(prefixedName, chunks[1]); setenvErr != nil {
 								return errors.New(fmt.Sprintf("error setting environment variable: %s => %v", chunks[0], setenvErr))
@@ -69,7 +64,7 @@ func PreloadEnvironment() error {
 				if err := file.Close(); err != nil {
 					return err
 				}
-				log.Println("Done loading prefixed environment variables.")
+				log.Println("All done setting prefixed environment variables from your file. Have a nice day!")
 			}
 		}
 	}
