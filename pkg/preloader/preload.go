@@ -15,17 +15,17 @@ const (
 )
 
 // PreloadEnvironment looks for a file specified by an environment variable named ENVIRONMENT_PRELOADER
-func PreloadEnvironment() error {
+func PreloadEnvironment() (string, error) {
+	var environmentPreloaderPrefix string
 	envFile := os.Getenv(EnvironmentVariableName)
 	if envFile != "" {
 		log.Printf("Loading environment preload file from: %s", envFile)
 		if _, stat := os.Stat(envFile); !os.IsNotExist(stat) {
 			if file, err := os.Open(envFile); err != nil {
-				return errors.New(fmt.Sprintf("Could not open environment loader file: %s, %v", envFile, err))
+				return "", errors.New(fmt.Sprintf("Could not open environment loader file: %s, %v", envFile, err))
 			} else {
 				scanner := bufio.NewScanner(file)
 				firstScan := true
-				var environmentPreloaderPrefix string
 
 			scanning:
 				for scanner.Scan() {
@@ -55,18 +55,18 @@ func PreloadEnvironment() error {
 							log.Printf("Setting %s", prefixedName)
 
 							if setenvErr := os.Setenv(prefixedName, chunks[1]); setenvErr != nil {
-								return errors.New(fmt.Sprintf("error setting environment variable: %s => %v", chunks[0], setenvErr))
+								return "", errors.New(fmt.Sprintf("error setting environment variable: %s => %v", chunks[0], setenvErr))
 							}
 						}
 					}
 
 				}
 				if err := file.Close(); err != nil {
-					return err
+					return "", err
 				}
 				log.Println("All done setting prefixed environment variables from your file. Have a nice day!")
 			}
 		}
 	}
-	return nil
+	return environmentPreloaderPrefix, nil
 }
