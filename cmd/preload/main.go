@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ben-summers/environment-preloader/pkg/preloader"
+	"github.com/numbermess/environment-preloader/pkg/preloader"
 	"log"
 )
 
