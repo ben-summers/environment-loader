@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-func TestPreloadSilent(t *testing.T) {
+func TestPreloadDebug(t *testing.T) {
 
-	preloader.OverrideVerbosity = true
-	preloader.OverriddenVerbosity = false
+	preloader.OverrideLogLevel = true
+	preloader.OverriddenLogLevel = "debug"
 
 	_, err := preloader.PreloadEnvironment()
 	if err != nil {
@@ -17,10 +17,22 @@ func TestPreloadSilent(t *testing.T) {
 
 }
 
-func TestPreloadVerbose(t *testing.T) {
+func TestPreloadWarning(t *testing.T) {
 
-	preloader.OverrideVerbosity = true
-	preloader.OverriddenVerbosity = true
+	preloader.OverrideLogLevel = true
+	preloader.OverriddenLogLevel = "warn"
+
+	_, err := preloader.PreloadEnvironment()
+	if err != nil {
+		t.Fail()
+	}
+
+}
+
+func TestPreloadInfo(t *testing.T) {
+
+	preloader.OverrideLogLevel = true
+	preloader.OverriddenLogLevel = "info"
 
 	_, err := preloader.PreloadEnvironment()
 	if err != nil {
