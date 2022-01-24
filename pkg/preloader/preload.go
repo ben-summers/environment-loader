@@ -29,8 +29,16 @@ func PreloadEnvironment() (string, error) {
 			} else {
 				scanner := bufio.NewScanner(file)
 
+				relevant := []string{EnvironmentPreloaderVerbose, EnvironmentPreloaderPrefix}
+				relevance := 0
 				// Try to find lines relevant to the preloader first.
 				for scanner.Scan() {
+
+					if relevance == len(relevant) {
+						// Everything we are looking for in this pass has been found.
+						break
+					}
+
 					line := scanner.Text()
 					chunks := strings.SplitN(line, "=", 2)
 					if len(chunks) == 2 {
@@ -39,15 +47,20 @@ func PreloadEnvironment() (string, error) {
 						chunks[1] = strings.TrimSpace(chunks[1])
 
 						if EnvironmentPreloaderPrefix == chunks[0] {
+							relevance += 1
 							environmentPreloaderPrefix = chunks[1]
 						} else if EnvironmentPreloaderVerbose == chunks[0] {
 							value := strings.ToLower(chunks[1])
 							if "yes" == value || "true" == value {
 								verbose = true
 							}
+							relevance += 1
 						}
 					}
 				}
+
+				// Reset the scanner
+				scanner = bufio.NewScanner(file)
 
 				for scanner.Scan() {
 					line := scanner.Text()
