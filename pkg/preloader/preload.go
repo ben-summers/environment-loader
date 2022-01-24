@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"os"
 	"strings"
 )
@@ -15,6 +15,11 @@ const (
 	EnvironmentPreloaderVerbose = "ENVIRONMENT_PRELOADER_VERBOSE"
 )
 
+var (
+	OverriddenVerbosity bool
+	OverrideVerbosity   bool
+)
+
 // PreloadEnvironment looks for a file specified by an environment variable named ENVIRONMENT_PRELOADER
 func PreloadEnvironment() (string, error) {
 	var environmentPreloaderPrefix string
@@ -22,23 +27,20 @@ func PreloadEnvironment() (string, error) {
 
 	envFile := os.Getenv(EnvironmentVariableName)
 	if envFile != "" {
-		log.Printf("loading environment file: %s", envFile)
+		log.Debug().
+			Str("filename", envFile).
+			Msg("opening environment file")
+
 		if _, stat := os.Stat(envFile); !os.IsNotExist(stat) {
 			if file, err := os.Open(envFile); err != nil {
 				return "", errors.New(fmt.Sprintf("Could not open environment loader file: %s, %v", envFile, err))
 			} else {
 				scanner := bufio.NewScanner(file)
+				env := make(map[string]string)
 
-				relevant := []string{EnvironmentPreloaderVerbose, EnvironmentPreloaderPrefix}
-				relevance := 0
 				// Try to find lines relevant to the preloader first.
 				for scanner.Scan() {
 
-					if relevance == len(relevant) {
-						// Everything we are looking for in this pass has been found.
-						break
-					}
-
 					line := scanner.Text()
 					chunks := strings.SplitN(line, "=", 2)
 					if len(chunks) == 2 {
@@ -46,51 +48,55 @@ func PreloadEnvironment() (string, error) {
 						chunks[0] = strings.TrimSpace(chunks[0])
 						chunks[1] = strings.TrimSpace(chunks[1])
 
-						if EnvironmentPreloaderPrefix == chunks[0] {
-							relevance += 1
-							environmentPreloaderPrefix = chunks[1]
-						} else if EnvironmentPreloaderVerbose == chunks[0] {
-							value := strings.ToLower(chunks[1])
-							if "yes" == value || "true" == value {
-								verbose = true
-							}
-							relevance += 1
-						}
+						env[chunks[0]] = chunks[1]
+
 					}
 				}
 
-				// Reset the scanner
-				scanner = bufio.NewScanner(file)
+				if prefix, ok := env[EnvironmentPreloaderPrefix]; !ok {
+					log.Warn().
+						Msg("no environment preloader prefix specified; environment variables named in this file will be exported as-is")
+				} else {
+					environmentPreloaderPrefix = prefix
+				}
+				if shouldBeVerbose, ok := env[EnvironmentPreloaderVerbose]; !ok {
+					verbose = false
+				} else {
+					shouldBeVerbose = strings.ToLower(shouldBeVerbose)
+					var maybe bool
+					maybe = "yes" == shouldBeVerbose
+					maybe = maybe || "true" == shouldBeVerbose
+					verbose = maybe
+				}
 
-				for scanner.Scan() {
-					line := scanner.Text()
-					chunks := strings.SplitN(line, "=", 2)
-					if len(chunks) == 2 {
+				delete(env, EnvironmentPreloaderPrefix)
+				delete(env, EnvironmentPreloaderVerbose)
 
-						chunks[0] = strings.TrimSpace(chunks[0])
-						chunks[1] = strings.TrimSpace(chunks[1])
+				if OverrideVerbosity {
+					verbose = OverriddenVerbosity
+				}
 
-						if chunks[0] == EnvironmentPreloaderVerbose || chunks[0] == EnvironmentPreloaderPrefix {
-							continue
-						}
+				for key, value := range env {
+					prefixedName := fmt.Sprintf("%s_%s", environmentPreloaderPrefix, key)
 
-						prefixedName := fmt.Sprintf("%s_%s", environmentPreloaderPrefix, chunks[0])
+					if verbose {
+						log.Info().
+							Str("key", prefixedName).
+							Str("value", value).
+							Msg("setting environment variable")
 
-						if verbose {
-							log.Printf("Setting %s", prefixedName)
-						}
+					}
 
-						if setenvErr := os.Setenv(prefixedName, chunks[1]); setenvErr != nil {
-							return "", errors.New(fmt.Sprintf("error setting environment variable: %s => %v", chunks[0], setenvErr))
-						}
+					if setenvErr := os.Setenv(prefixedName, value); setenvErr != nil {
+						return "", errors.New(fmt.Sprintf("error setting environment variable: %s => %v", key, setenvErr))
 					}
 				}
 				if err := file.Close(); err != nil {
 					return "", err
 				}
-				if verbose {
-					log.Println("All done setting prefixed environment variables from your file. Have a nice day!")
-				}
+
+				log.Info().
+					Msg("all prefixed environment variables have been set and exported.")
 			}
 		}
 	}
