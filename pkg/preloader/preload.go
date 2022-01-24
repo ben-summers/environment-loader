@@ -34,6 +34,10 @@ func PreloadEnvironment() (string, error) {
 					line := scanner.Text()
 					chunks := strings.SplitN(line, "=", 2)
 					if len(chunks) == 2 {
+
+						chunks[0] = strings.TrimSpace(chunks[0])
+						chunks[1] = strings.TrimSpace(chunks[1])
+
 						if EnvironmentPreloaderPrefix == chunks[0] {
 							environmentPreloaderPrefix = chunks[1]
 						} else if EnvironmentPreloaderVerbose == chunks[0] {
