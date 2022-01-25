@@ -1,7 +1,7 @@
 package test
 
 import (
-	"preloader/pkg/preloader"
+	"github.com/numbermess/environment-preloader/pkg/preloader"
 	"testing"
 )
 

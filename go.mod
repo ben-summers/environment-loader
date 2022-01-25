@@ -1,4 +1,4 @@
-module preloader
+module github.com/numbermess/environment-preloader
 
 go 1.17
 

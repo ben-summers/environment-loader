@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/numbermess/environment-preloader/pkg/preloader"
 	"github.com/rs/zerolog/log"
-	"preloader/pkg/preloader"
 )
 
 // Main entrypoint. Doesn't really do anything but make IDEA forget the unused method reference.
