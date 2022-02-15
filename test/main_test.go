@@ -42,8 +42,25 @@ func TestPreloadInfo(t *testing.T) {
 
 }
 
+func TestPreloadBlobShouldFailNoImportExportNamesSpecified(t *testing.T) {
+
+	importName := ""
+	exportName := ""
+	blob, err := preloader.PreloadEnvironmentBlob(importName, exportName)
+	if err != nil {
+		t.Fail()
+	}
+
+	log.Debug().
+		Str("blob", blob).
+		Msg("exported blob")
+
+}
+
 func TestPreloadBlob(t *testing.T) {
-	blob, err := preloader.PreloadEnvironmentBlob()
+	importName := "TEST_IMPORT_NAME"
+	exportName := "FUNKY_CHICKEN"
+	blob, err := preloader.PreloadEnvironmentBlob(importName, exportName)
 	if err != nil {
 		t.Fail()
 	}

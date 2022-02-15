@@ -30,11 +30,11 @@ var (
 	OverrideLogLevel   bool
 )
 
-func PreloadEnvironmentBlob() (string, error) {
-	envFile := os.Getenv(EnvironmentVariableName)
+func PreloadEnvironmentBlob(importName string, exportName string) (string, error) {
+	envFile := os.Getenv(importName)
 	if envFile == "" {
-		log.Error().Msgf("%s not specified", EnvironmentVariableName)
-		return "", fmt.Errorf("%s not specified", EnvironmentVariableName)
+		log.Error().Msgf("%s not specified", importName)
+		return "", fmt.Errorf("%s not specified", importName)
 	}
 
 	log.Debug().Str("filename", envFile).Msg("opening environment file")
@@ -48,11 +48,11 @@ func PreloadEnvironmentBlob() (string, error) {
 				return "", err
 			}
 			blob := string(bytes)
-			err = os.Setenv(EnvironmentPreloaderBlob, blob)
+			err = os.Setenv(exportName, blob)
 			if err != nil {
 				return "", err
 			}
-			log.Info().Msgf("%s blob exported to environment.", EnvironmentPreloaderBlob)
+			log.Info().Msgf("%s blob exported to environment.", exportName)
 			return blob, nil
 		}
 	}
