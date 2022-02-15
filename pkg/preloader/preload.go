@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"io/ioutil"
 	"os"
 	"strings"
 )
 
 const (
-	EnvironmentVariableName = "ENVIRONMENT_PRELOADER_FILE"
-	Prefix                  = "ENVIRONMENT_PRELOADER_PREFIX"
-	LogLevel                = "ENVIRONMENT_PRELOADER_LOG_LEVEL"
+	EnvironmentVariableName  = "ENVIRONMENT_PRELOADER_FILE"
+	EnvironmentPreloaderBlob = "ENVIRONMENT_PRELOADER_BLOB"
+	Prefix                   = "ENVIRONMENT_PRELOADER_PREFIX"
+	LogLevel                 = "ENVIRONMENT_PRELOADER_LOG_LEVEL"
 )
 
 const (
@@ -27,6 +29,35 @@ var (
 	OverriddenLogLevel string
 	OverrideLogLevel   bool
 )
+
+func PreloadEnvironmentBlob() (string, error) {
+	envFile := os.Getenv(EnvironmentVariableName)
+	if envFile == "" {
+		log.Error().Msgf("%s not specified", EnvironmentVariableName)
+		return "", fmt.Errorf("%s not specified", EnvironmentVariableName)
+	}
+
+	log.Debug().Str("filename", envFile).Msg("opening environment file")
+	if _, stat := os.Stat(envFile); !os.IsNotExist(stat) {
+		if file, err := os.Open(envFile); err != nil {
+			log.Err(err).Msg("could not open file")
+			return "", err
+		} else {
+			bytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				return "", err
+			}
+			blob := string(bytes)
+			err = os.Setenv(EnvironmentPreloaderBlob, blob)
+			if err != nil {
+				return "", err
+			}
+			log.Info().Msgf("%s blob exported to environment.", EnvironmentPreloaderBlob)
+			return blob, nil
+		}
+	}
+	return "", nil
+}
 
 // PreloadEnvironment looks for a file specified by an environment variable named ENVIRONMENT_PRELOADER
 func PreloadEnvironment() (string, error) {

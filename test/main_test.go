@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/numbermess/environment-preloader/pkg/preloader"
+	"github.com/rs/zerolog/log"
 	"testing"
 )
 
@@ -38,5 +39,17 @@ func TestPreloadInfo(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
+
+}
+
+func TestPreloadBlob(t *testing.T) {
+	blob, err := preloader.PreloadEnvironmentBlob()
+	if err != nil {
+		t.Fail()
+	}
+
+	log.Debug().
+		Str("blob", blob).
+		Msg("exported blob")
 
 }
